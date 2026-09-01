@@ -11,7 +11,7 @@ def extraer_mensaje_cifrado(pcap_file):
         if pkt.haslayer(ICMP) and pkt.haslayer(Raw):
             payload = bytes(pkt[Raw].load)
             if len(payload) >= 1:
-                codigo_ascii = payload[0]  # ← era [8], ahora es [0]
+                codigo_ascii = payload[0]
                 if 97 <= codigo_ascii <= 122:
                     mensaje += chr(codigo_ascii)
                 elif codigo_ascii == 32:
