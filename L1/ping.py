@@ -1,8 +1,6 @@
 # sudo .venv/bin/python ping.py "larycxpajorj h bnpdarmjm nw anmnb"
-
-import sys
+import sys, struct, time
 from scapy.all import IP, ICMP, Raw, sr1, wrpcap
-import time
 
 if len(sys.argv) > 1:
     arg1 = sys.argv[1]
@@ -15,16 +13,18 @@ paquetes_enviados = []
 for i, letter in enumerate(palabra_cifrada):
     codigo_ascii = ord(letter)
 
-    # Payload estándar de ping Linux: 0x10 a 0x37 (40 bytes)
-    payload = list(range(0x10, 0x38))  # 40 bytes: 0x10..0x37
+    # 8 bytes de timestamp (timeval, little-endian)
+    ts_sec = int(time.time()) + i
+    ts_usec = 0
+    timestamp_bytes = struct.pack('<II', ts_sec, ts_usec)
 
-    # Letra en el primer byte del payload (posición 0x10)
-    payload[0] = codigo_ascii
+    # Patrón estándar 0x10..0x37 (40 bytes), letra escondida en primer byte
+    patron = list(range(0x10, 0x38))
+    patron[0] = codigo_ascii
+    
+    payload = timestamp_bytes + bytes(patron)  # total 48 bytes
 
-    payload_bytes = bytes(payload)
-
-    packet = IP(dst=packet_dst) / ICMP(id=0x0001, seq=i) / Raw(load=payload_bytes)
-
+    packet = IP(dst=packet_dst) / ICMP(id=0x0001, seq=i) / Raw(load=payload)
     respuesta = sr1(packet, timeout=2)
     paquetes_enviados.append(packet)
 

@@ -1,5 +1,5 @@
 
-from scapy.all import rdpcap
+from scapy.all import rdpcap, Raw, ICMP
 
 alfabeto = ['a','b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u','v', 'w', 'x', 'y', 'z']
 palabras_comunes = {" de ", " en ", " el ", " la ", " con ", " para "}
@@ -8,12 +8,17 @@ def extraer_mensaje_cifrado(pcap_file):
     paquetes = rdpcap(pcap_file)
     mensaje = ""
     for pkt in paquetes:
-        microsegundos = int(round((pkt.time - int(pkt.time)) * 1_000_000))
-        if 97 <= microsegundos <= 122:  # rango ASCII de 'a' a 'z'
-            mensaje += chr(microsegundos)
-        elif microsegundos == 32:  # espacio
-            mensaje += " "
+        if pkt.haslayer(ICMP) and pkt.haslayer(Raw):
+            payload = bytes(pkt[Raw].load)
+            if len(payload) >= 1:
+                codigo_ascii = payload[0]  # ← era [8], ahora es [0]
+                if 97 <= codigo_ascii <= 122:
+                    mensaje += chr(codigo_ascii)
+                elif codigo_ascii == 32:
+                    mensaje += " "
     return mensaje
+
+
 
 def decode_rot(texto, key):
     output = ""
